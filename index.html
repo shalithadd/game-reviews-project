@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GameCritic — Game Reviews Site</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0b0c10; --surface: #13141a; --surface2: #1c1e27;
+    --border: #2a2c38; --accent: #c8f135; --accent2: #7c6dfa;
+    --text: #f0f0f0; --muted: #7a7d8f; --danger: #ff5e5e;
+    --success: #4ade80; --card-radius: 14px;
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.2rem 2.5rem; border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; background: rgba(11,12,16,0.92);
+    backdrop-filter: blur(12px); z-index: 100;
+  }
+  .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.4rem; letter-spacing: -0.5px; }
+  .logo span { color: var(--accent); }
+  .nav-tabs { display: flex; gap: 0.25rem; }
+  .nav-tab { padding: 0.45rem 1rem; border-radius: 8px; font-size: 0.875rem; font-weight: 500; cursor: pointer; border: none; background: transparent; color: var(--muted); transition: all 0.15s; }
+  .nav-tab:hover { color: var(--text); background: var(--surface2); }
+  .nav-tab.active { color: var(--bg); background: var(--accent); font-weight: 600; }
+  .hero { padding: 3.5rem 2.5rem 2rem; max-width: 1100px; margin: 0 auto; }
+  .hero h1 { font-family: 'Syne', sans-serif; font-size: clamp(2rem,5vw,3.5rem); font-weight: 800; line-height: 1.1; letter-spacing: -1px; }
+  .hero h1 em { color: var(--accent); font-style: normal; }
+  .hero p { color: var(--muted); margin-top: 0.75rem; font-size: 1rem; }
+  .page { display: none; }
+  .page.active { display: block; }
+  .section { max-width: 1100px; margin: 0 auto; padding: 2rem 2.5rem 4rem; }
+  .stats-bar { display: flex; gap: 1rem; margin-bottom: 2.5rem; flex-wrap: wrap; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--card-radius); padding: 1rem 1.5rem; flex: 1; min-width: 150px; }
+  .stat-card .label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem; }
+  .stat-card .value { font-family: 'Syne', sans-serif; font-size: 1.8rem; font-weight: 700; }
+  .stat-card .value.accent { color: var(--accent); }
+  .stat-card .value.purple { color: var(--accent2); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.25rem; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--card-radius); padding: 1.25rem 1.5rem; cursor: pointer; transition: border-color 0.15s, transform 0.15s; position: relative; overflow: hidden; }
+  .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform 0.2s; }
+  .card:hover { border-color: #3a3c48; transform: translateY(-2px); }
+  .card:hover::before { transform: scaleX(1); }
+  .card-tag { display: inline-block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; background: rgba(200,241,53,0.12); color: var(--accent); padding: 3px 10px; border-radius: 20px; margin-bottom: 0.75rem; }
+  .card-tag.purple { background: rgba(124,109,250,0.15); color: var(--accent2); }
+  .card h3 { font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 700; margin-bottom: 0.35rem; }
+  .card .meta { font-size: 0.82rem; color: var(--muted); margin-bottom: 0.75rem; }
+  .card .row { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; }
+  .card .count { font-size: 0.78rem; color: var(--muted); }
+  .score { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 8px; font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 800; }
+  .score.high { background: rgba(200,241,53,0.15); color: var(--accent); }
+  .score.mid { background: rgba(239,159,39,0.15); color: #ef9f27; }
+  .score.low { background: rgba(255,94,94,0.15); color: var(--danger); }
+  .detail-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--card-radius); padding: 1.75rem 2rem; margin-bottom: 2rem; display: none; }
+  .detail-panel.open { display: block; }
+  .detail-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; }
+  .detail-header h2 { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800; }
+  .btn { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); border-radius: 8px; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.8rem; transition: all 0.15s; font-family: 'DM Sans', sans-serif; }
+  .btn:hover { color: var(--text); border-color: #444; }
+  .btn.danger { border-color: rgba(255,94,94,0.3); color: var(--danger); }
+  .btn.danger:hover { background: rgba(255,94,94,0.1); }
+  .btn.primary { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 600; }
+  .btn.primary:hover { opacity: 0.88; }
+  .detail-meta { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  .detail-meta span { font-size: 0.85rem; color: var(--muted); }
+  .detail-meta span strong { color: var(--text); }
+  .section-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+  .section-heading h2 { font-family: 'Syne', sans-serif; font-size: 1.15rem; font-weight: 700; }
+  .tag { font-size: 0.75rem; color: var(--muted); background: var(--surface2); border: 1px solid var(--border); padding: 4px 10px; border-radius: 20px; }
+  .reviews-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+  .review-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; display: flex; gap: 1rem; align-items: flex-start; }
+  .reviewer-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--accent2), var(--accent)); display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-size: 0.75rem; font-weight: 700; color: #fff; flex-shrink: 0; }
+  .review-body { flex: 1; }
+  .review-body h4 { font-size: 0.875rem; font-weight: 500; margin-bottom: 0.2rem; }
+  .review-body p { font-size: 0.82rem; color: var(--muted); line-height: 1.5; margin-top: 0.3rem; }
+  .review-body .date { font-size: 0.75rem; color: var(--muted); margin-top: 0.4rem; }
+  .review-actions { display: flex; gap: 0.5rem; margin-top: 0.6rem; }
+  .form-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--card-radius); padding: 2rem; max-width: 640px; }
+  .form-card h2 { font-family: 'Syne', sans-serif; font-size: 1.25rem; font-weight: 700; margin-bottom: 0.4rem; }
+  .form-card .subtitle { font-size: 0.85rem; color: var(--muted); margin-bottom: 1.75rem; }
+  .form-group { margin-bottom: 1.25rem; }
+  .form-group label { display: block; font-size: 0.8rem; font-weight: 500; color: var(--muted); margin-bottom: 0.45rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  .form-group input, .form-group select, .form-group textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 0.7rem 1rem; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.15s; }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); }
+  .form-group textarea { resize: vertical; min-height: 100px; }
+  .form-group select option { background: var(--surface2); }
+  .score-selector { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .score-btn { width: 40px; height: 40px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-family: 'Syne', sans-serif; font-weight: 700; cursor: pointer; font-size: 0.85rem; transition: all 0.12s; }
+  .score-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .score-btn.selected { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+  .submit-btn { width: 100%; padding: 0.85rem; background: var(--accent); color: var(--bg); border: none; border-radius: 8px; font-family: 'Syne', sans-serif; font-size: 0.95rem; font-weight: 700; cursor: pointer; margin-top: 1rem; transition: opacity 0.15s; }
+  .submit-btn:hover { opacity: 0.88; }
+  .toast { display: none; border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.85rem; margin-top: 1rem; }
+  .toast.success { background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.3); color: var(--success); }
+  .toast.error { background: rgba(255,94,94,0.1); border: 1px solid rgba(255,94,94,0.3); color: var(--danger); }
+  .toast.show { display: block; }
+  .loading { text-align: center; padding: 2rem; color: var(--muted); font-size: 0.9rem; }
+  .empty { text-align: center; padding: 3rem 1rem; color: var(--muted); font-size: 0.9rem; }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--card-radius); padding: 2rem; width: 100%; max-width: 500px; margin: 1rem; }
+  .modal h3 { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700; margin-bottom: 1.5rem; }
+  .modal-footer { display: flex; gap: 0.75rem; margin-top: 1.25rem; }
+  @media (max-width: 600px) { nav { padding: 1rem 1.25rem; } .hero, .section { padding-left: 1.25rem; padding-right: 1.25rem; } }
+</style>
+</head>
+<body>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <h3>Edit Review</h3>
+    <div class="form-group">
+      <label>Reviewer Name</label>
+      <input type="text" id="edit-name">
+    </div>
+    <div class="form-group">
+      <label>Score (1–10)</label>
+      <div class="score-selector" id="edit-score-selector"></div>
+    </div>
+    <div class="form-group">
+      <label>Review Text</label>
+      <textarea id="edit-text"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn primary" onclick="saveEdit()">Save Changes</button>
+      <button class="btn" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<nav>
+  <div class="logo">Game<span>Critic</span></div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('games',this)">Games</button>
+    <button class="nav-tab" onclick="showPage('developers',this)">Developers</button>
+    <button class="nav-tab" onclick="showPage('add-review',this)">Add Review</button>
+  </div>
+</nav>
+
+<div class="page active" id="page-games">
+  <div class="hero">
+    <h1>Discover & Review<br><em>Great Games</em></h1>
+    <p>Live database-driven review site — TT00CD81 Databases.</p>
+  </div>
+  <div class="section">
+    <div class="stats-bar">
+      <div class="stat-card"><div class="label">Total Games</div><div class="value accent" id="stat-games">—</div></div>
+      <div class="stat-card"><div class="label">Developers</div><div class="value purple" id="stat-devs">—</div></div>
+      <div class="stat-card"><div class="label">Total Reviews</div><div class="value" id="stat-reviews">—</div></div>
+      <div class="stat-card"><div class="label">Avg Score</div><div class="value accent" id="stat-avg">—</div></div>
+    </div>
+    <div class="detail-panel" id="game-detail">
+      <div class="detail-header">
+        <div><div class="card-tag" id="detail-genre"></div><h2 id="detail-title"></h2></div>
+        <button class="btn" onclick="closeDetail()">&#x2715; Close</button>
+      </div>
+      <div class="detail-meta">
+        <span><strong id="detail-dev"></strong></span>
+        <span>Released: <strong id="detail-year"></strong></span>
+        <span>Reviews: <strong id="detail-review-count"></strong></span>
+        <span>Avg Score: <strong id="detail-avg-score"></strong></span>
+      </div>
+      <div class="section-heading"><h2>Reviews</h2></div>
+      <div class="reviews-list" id="reviews-list"></div>
+    </div>
+    <div class="section-heading">
+      <h2>All Games</h2>
+      <span class="tag" id="games-count"></span>
+    </div>
+    <div id="games-grid" class="grid"><div class="loading">Loading games from database...</div></div>
+  </div>
+</div>
+
+<div class="page" id="page-developers">
+  <div class="section" style="padding-top:2.5rem;">
+    <div class="section-heading">
+      <h2>Game Developers</h2>
+      <span class="tag" id="devs-count"></span>
+    </div>
+    <div id="devs-grid" class="grid"><div class="loading">Loading developers...</div></div>
+  </div>
+</div>
+
+<div class="page" id="page-add-review">
+  <div class="section" style="padding-top:2.5rem;">
+    <div class="form-card">
+      <h2>Submit a Review</h2>
+      <p class="subtitle">Your review will be saved directly to the MySQL database on LabraNet.</p>
+      <div class="form-group">
+        <label>Select Game</label>
+        <select id="review-game"></select>
+      </div>
+      <div class="form-group">
+        <label>Your Name</label>
+        <input type="text" id="review-name" placeholder="e.g. Shalitha">
+      </div>
+      <div class="form-group">
+        <label>Score (1–10)</label>
+        <div class="score-selector" id="score-selector"></div>
+      </div>
+      <div class="form-group">
+        <label>Review Text</label>
+        <textarea id="review-text" placeholder="Write your honest opinion about the game..."></textarea>
+      </div>
+      <button class="submit-btn" onclick="submitReview()">Submit Review</button>
+      <div class="toast" id="add-toast"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'api.php';
+let allGames = [];
+let selectedScore = null;
+let editScore = null;
+let editingReviewId = null;
+let currentGameId = null;
+
+async function apiFetch(action, options = {}) {
+  try {
+    const url = `${API}?action=${action}${options.query || ''}`;
+    const res = await fetch(url, {
+      method: options.method || 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      body: options.body ? JSON.stringify(options.body) : undefined
+    });
+    return await res.json();
+  } catch(e) {
+    return { error: 'Could not reach api.php. Make sure it is in the same folder on your web server.' };
+  }
+}
+
+function scoreClass(s) { return s >= 8 ? 'high' : s >= 6 ? 'mid' : 'low'; }
+function initials(n) { return n.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2); }
+
+function showToast(id, msg, type) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.className = `toast ${type} show`;
+  setTimeout(() => el.className = 'toast', 3500);
+}
+
+function showPage(page, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  if (btn) btn.classList.add('active');
+  closeDetail();
+}
+
+async function loadGames() {
+  const games = await apiFetch('get_games');
+  if (games.error) {
+    document.getElementById('games-grid').innerHTML = `<div class="empty">${games.error}</div>`;
+    return;
+  }
+  allGames = games;
+  document.getElementById('stat-games').textContent = games.length;
+  document.getElementById('games-count').textContent = `${games.length} games`;
+  const totalReviews = games.reduce((s,g) => s + parseInt(g.review_count||0), 0);
+  const scores = games.filter(g=>g.avg_score).map(g=>parseFloat(g.avg_score));
+  document.getElementById('stat-reviews').textContent = totalReviews;
+  document.getElementById('stat-avg').textContent = scores.length ? (scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1) : '—';
+  const grid = document.getElementById('games-grid');
+  if (!games.length) { grid.innerHTML = '<div class="empty">No games found.</div>'; return; }
+  grid.innerHTML = games.map(g => `
+    <div class="card" onclick="openGame(${g.game_id})">
+      <div class="card-tag">${g.genre||'Game'}</div>
+      <h3>${g.title}</h3>
+      <div class="meta">${g.developer_name} &middot; ${g.release_year}</div>
+      <div class="row">
+        <span class="count">${g.review_count} review${g.review_count!=1?'s':''}</span>
+        ${g.avg_score
+          ? `<div class="score ${scoreClass(g.avg_score)}">${g.avg_score}</div>`
+          : `<div class="score" style="background:var(--surface2);color:var(--muted);font-size:0.7rem;">NR</div>`}
+      </div>
+    </div>`).join('');
+  const sel = document.getElementById('review-game');
+  sel.innerHTML = games.map(g => `<option value="${g.game_id}">${g.title}</option>`).join('');
+}
+
+async function loadDevelopers() {
+  const devs = await apiFetch('get_developers');
+  if (devs.error) { document.getElementById('devs-grid').innerHTML = `<div class="empty">${devs.error}</div>`; return; }
+  document.getElementById('stat-devs').textContent = devs.length;
+  document.getElementById('devs-count').textContent = `${devs.length} studios`;
+  const grid = document.getElementById('devs-grid');
+  if (!devs.length) { grid.innerHTML = '<div class="empty">No developers found.</div>'; return; }
+  grid.innerHTML = devs.map(d => `
+    <div class="card">
+      <div class="card-tag purple">${d.country}</div>
+      <h3>${d.name}</h3>
+      <div class="meta">Founded ${d.founded_year}</div>
+      <div class="row"><span class="count">${d.game_count} game${d.game_count!=1?'s':''}</span></div>
+    </div>`).join('');
+}
+
+async function openGame(gameId) {
+  currentGameId = gameId;
+  const game = allGames.find(g => g.game_id == gameId);
+  document.getElementById('detail-genre').textContent = game.genre;
+  document.getElementById('detail-title').textContent = game.title;
+  document.getElementById('detail-dev').textContent = game.developer_name;
+  document.getElementById('detail-year').textContent = game.release_year;
+  document.getElementById('detail-review-count').textContent = '...';
+  document.getElementById('detail-avg-score').textContent = '...';
+  const panel = document.getElementById('game-detail');
+  panel.classList.add('open');
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  await loadReviews(gameId);
+}
+
+async function loadReviews(gameId) {
+  const reviews = await apiFetch('get_reviews', { query: `&game_id=${gameId}` });
+  if (reviews.error) { document.getElementById('reviews-list').innerHTML = `<div class="empty">${reviews.error}</div>`; return; }
+  document.getElementById('detail-review-count').textContent = reviews.length;
+  const avg = reviews.length ? (reviews.reduce((s,r)=>s+parseInt(r.score),0)/reviews.length).toFixed(1) : '—';
+  document.getElementById('detail-avg-score').textContent = avg;
+  const list = document.getElementById('reviews-list');
+  if (!reviews.length) { list.innerHTML = '<div class="empty">No reviews yet. Be the first!</div>'; return; }
+  list.innerHTML = reviews.map(r => `
+    <div class="review-item" id="review-${r.review_id}">
+      <div class="reviewer-avatar">${initials(r.reviewer_name)}</div>
+      <div class="review-body">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <h4>${r.reviewer_name}</h4>
+          <div class="score ${scoreClass(r.score)}" style="width:32px;height:32px;font-size:0.85rem;">${r.score}</div>
+        </div>
+        <p>${r.review_text||''}</p>
+        <div class="date">${r.review_date}</div>
+        <div class="review-actions">
+          <button class="btn" onclick='openEdit(${r.review_id},${JSON.stringify(r.reviewer_name)},${r.score},${JSON.stringify(r.review_text||"")})'>Edit</button>
+          <button class="btn danger" onclick="deleteReview(${r.review_id})">Delete</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function closeDetail() { document.getElementById('game-detail').classList.remove('open'); currentGameId = null; }
+
+async function deleteReview(reviewId) {
+  if (!confirm('Delete this review? This cannot be undone.')) return;
+  const res = await apiFetch('delete_review', { method: 'DELETE', query: `&review_id=${reviewId}` });
+  if (res.success) {
+    await loadGames();
+    if (currentGameId) await loadReviews(currentGameId);
+  } else { alert('Error: ' + (res.error||'Could not delete.')); }
+}
+
+function openEdit(id, name, score, text) {
+  editingReviewId = id; editScore = score;
+  document.getElementById('edit-name').value = name;
+  document.getElementById('edit-text').value = text;
+  const sel = document.getElementById('edit-score-selector');
+  sel.innerHTML = Array.from({length:10},(_,i)=>i+1).map(n =>
+    `<button class="score-btn ${n==score?'selected':''}" onclick="setEditScore(${n},this)">${n}</button>`
+  ).join('');
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+function setEditScore(n, el) {
+  editScore = n;
+  document.querySelectorAll('#edit-score-selector .score-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+async function saveEdit() {
+  const name = document.getElementById('edit-name').value.trim();
+  const text = document.getElementById('edit-text').value.trim();
+  if (!name || !editScore) { alert('Fill in all fields and pick a score.'); return; }
+  const res = await apiFetch('update_review', { method: 'PUT', body: { review_id: editingReviewId, reviewer_name: name, score: editScore, review_text: text } });
+  if (res.success) {
+    closeModal();
+    await loadGames();
+    if (currentGameId) await loadReviews(currentGameId);
+  } else { alert('Error: ' + (res.error||'Could not update.')); }
+}
+
+function closeModal() { document.getElementById('edit-modal').classList.remove('open'); editingReviewId=null; editScore=null; }
+
+document.getElementById('score-selector').innerHTML = Array.from({length:10},(_,i)=>i+1).map(n =>
+  `<button class="score-btn" onclick="selectScore(${n},this)">${n}</button>`).join('');
+
+function selectScore(n, el) {
+  selectedScore = n;
+  document.querySelectorAll('#score-selector .score-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+async function submitReview() {
+  const gameId = parseInt(document.getElementById('review-game').value);
+  const name = document.getElementById('review-name').value.trim();
+  const text = document.getElementById('review-text').value.trim();
+  if (!name || !text || !selectedScore) { showToast('add-toast','Fill in all fields and pick a score.','error'); return; }
+  const res = await apiFetch('add_review', { method: 'POST', body: { game_id: gameId, reviewer_name: name, score: selectedScore, review_text: text } });
+  if (res.success) {
+    document.getElementById('review-name').value = '';
+    document.getElementById('review-text').value = '';
+    selectedScore = null;
+    document.querySelectorAll('#score-selector .score-btn').forEach(b=>b.classList.remove('selected'));
+    showToast('add-toast','Review submitted and saved to database!','success');
+    await loadGames();
+  } else { showToast('add-toast','Error: '+(res.error||'Could not submit.'),'error'); }
+}
+
+loadGames();
+loadDevelopers();
+</script>
+</body>
+</html>
